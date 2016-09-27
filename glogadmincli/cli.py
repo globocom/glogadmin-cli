@@ -6,6 +6,8 @@ import json
 from glogcli.graylog_api import GraylogAPIFactory
 from glogcli.utils import get_config
 from glogadmincli.graylog_api import GraylogAPI
+from glogadmincli.utils import mult_dict_del, format_stream_to_create, format_streams_to_create
+
 
 @click.command()
 @click.option("-sh", "--source-host", default=None, help="")
@@ -44,8 +46,18 @@ def main(source_host,
         roles_to_create = get_unique_roles_to_create(source_roles, target_roles)
 
         for role in roles_to_create:
-            result = target_api.post_role(role)
-            print result
+            print(role)
+            target_role_permissions = []
+            for permission in role.get("permissions"):
+                if("streams:" in permission):
+                    resource_tag, permission, source_stream_id = permission.split(":")
+                    stream = source_api.get_stream(source_stream_id)
+                    result = target_api.post_stream(format_stream_to_create(stream))
+                    target_role_permissions.append("{}:{}:{}".format(resource_tag, permission, result.get("stream_id")))
+
+            role["permissions"] = target_role_permissions
+            target_api.post_role(role)
+
 
     if(import_streams):
         source_streams = source_api.get_streams().get("streams")
@@ -76,8 +88,7 @@ def main(source_host,
         selected_roles_indexes = raw_input("Select a list of roles to access the streams passing IDs splitted by space, like '1 4 7 18': ").split(' ')
         for selected_index in selected_roles_indexes:
             role_to_update = target_roles[int(selected_index)]
-            result = target_api.put_streams_in_role(role_to_update, created_streams)
-
+            target_api.put_streams_in_role(role_to_update, created_streams)
 
 def get_unique_roles_to_create(source_roles, target_roles):
     for target_role in target_roles:
@@ -85,11 +96,6 @@ def get_unique_roles_to_create(source_roles, target_roles):
             if(source_role.get("name").lower() == target_role.get("name").lower()):
                 source_roles.remove(source_role)
     return source_roles
-
-    #source_streams = source_api.get_streams()
-    #print(source_streams)
-    #target_api.post_streams(source_streams)
-
 
 if __name__ == "__main__":
     main()

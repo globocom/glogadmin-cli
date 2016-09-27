@@ -4,10 +4,11 @@ import requests
 import six
 import json
 
+from utils import mult_dict_del, format_stream_to_create, format_streams_to_create
+
 POST_DEFAULT_HEADER = {"Accept": "application/json", "Content-Type": "application/json"}
 
 class GraylogAPI(object):
-
 
     def __init__(self, graylog_api):
         self.graylog_api = graylog_api
@@ -17,6 +18,10 @@ class GraylogAPI(object):
 
     def get_roles(self):
         return self.graylog_api.get("roles")
+
+    def get_stream(self, id):
+        print(id)
+        return self.graylog_api.get("streams/{}".format(id))
 
     def post_role(self, role, **kwargs):
         url = "roles"
@@ -56,20 +61,22 @@ class GraylogAPI(object):
                          auth=(self.graylog_api.username, self.graylog_api.password),
                          proxies=self.graylog_api.proxies, data=json.dumps(role))
 
-        click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+        if r.status_code != requests.codes.created:
+            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
         return r.json()
 
     def post_stream(self, stream, **kwargs):
         url = "streams"
         params = {}
 
-        del stream['created_at']
-        del stream['creator_user_id']
-        del stream['id']
-        del stream['alert_conditions']
-        del stream['outputs']
-        del stream['disabled']
-        del stream['alert_receivers']
+
+        #del stream['created_at']
+        #del stream['creator_user_id']
+        #del stream['id']
+        #del stream['alert_conditions']
+        #del stream['outputs']
+        #del stream['disabled']
+        #del stream['alert_receivers']
 
         for label, item in six.iteritems(kwargs):
             if isinstance(item, list):
@@ -81,8 +88,7 @@ class GraylogAPI(object):
                           auth=(self.graylog_api.username, self.graylog_api.password),
                           proxies=self.graylog_api.proxies, data=json.dumps(stream))
 
-        if r.status_code == requests.codes.created:
-            return r.json()
-        else:
+        if r.status_code != requests.codes.created:
             click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
-            return r.json()
+
+        return r.json()

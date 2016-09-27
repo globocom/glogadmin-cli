@@ -5,7 +5,7 @@ import click
 from glogcli.graylog_api import GraylogAPIFactory
 from glogcli.utils import get_config
 from glogadmincli.graylog_api import GraylogAPI
-from glogadmincli.utils import format_stream_to_create
+from glogadmincli.utils import format_stream_to_create, format_input_to_create
 
 
 @click.command()
@@ -18,6 +18,10 @@ from glogadmincli.utils import format_stream_to_create
 @click.option("--source-port", default=80,  help="")
 @click.option("--target-port", default=80,  help="")
 @click.option("--import-roles", default=False, is_flag=True, help="")
+@click.option("--import-inputs", default=False, is_flag=True, help="")
+@click.option("--import-extractors", default=False, is_flag=True, help="")
+
+
 def main(source_host,
          target_host,
          source_username,
@@ -26,7 +30,9 @@ def main(source_host,
          target_password,
          source_port,
          target_port,
-         import_roles):
+         import_roles,
+         import_inputs,
+         import_extractors):
 
     cfg = get_config()
 
@@ -36,14 +42,13 @@ def main(source_host,
     source_api = GraylogAPI(source_api)
     target_api = GraylogAPI(target_api)
 
-    if(import_roles):
+    if import_roles:
         source_roles = source_api.get_roles().get("roles")
         target_roles = target_api.get_roles().get("roles")
 
         roles_to_create = get_unique_roles_to_create(source_roles, target_roles)
 
         for role in roles_to_create:
-            print(role)
             target_role_permissions = []
             for permission in role.get("permissions"):
                 if("streams:" in permission):
@@ -54,6 +59,12 @@ def main(source_host,
 
             role["permissions"] = target_role_permissions
             target_api.post_role(role)
+
+    if import_inputs:
+        source_inputs = source_api.get_inputs().get("inputs")
+        for source_input in source_inputs:
+            source_input_id = source_input.get("id")
+            result = target_api.post_input(format_input_to_create(source_input))
 
 def get_unique_roles_to_create(source_roles, target_roles):
     for target_role in target_roles:

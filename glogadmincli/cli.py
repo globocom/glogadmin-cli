@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import click
-import json
 
 from glogcli.graylog_api import GraylogAPIFactory
 from glogcli.utils import get_config
 from glogadmincli.graylog_api import GraylogAPI
-from glogadmincli.utils import mult_dict_del, format_stream_to_create, format_streams_to_create
+from glogadmincli.utils import format_stream_to_create
 
 
 @click.command()
@@ -19,7 +18,6 @@ from glogadmincli.utils import mult_dict_del, format_stream_to_create, format_st
 @click.option("--source-port", default=80,  help="")
 @click.option("--target-port", default=80,  help="")
 @click.option("--import-roles", default=False, is_flag=True, help="")
-@click.option("--import-streams", default=False, is_flag=True, help="")
 def main(source_host,
          target_host,
          source_username,
@@ -28,8 +26,7 @@ def main(source_host,
          target_password,
          source_port,
          target_port,
-         import_roles,
-         import_streams):
+         import_roles):
 
     cfg = get_config()
 
@@ -57,38 +54,6 @@ def main(source_host,
 
             role["permissions"] = target_role_permissions
             target_api.post_role(role)
-
-
-    if(import_streams):
-        source_streams = source_api.get_streams().get("streams")
-        i = 0
-        for stream in source_streams:
-            stream_rules = stream.get("rules")
-            for rule in stream_rules:
-                del rule["stream_id"]
-                del rule["id"]
-            click.echo("{}: {} , rules: {}".format(i, stream.get("description"), stream_rules))
-            i += 1
-        selected_streams_indexes = raw_input("Select a list of streams passing IDs splitted by space, like '1 4 7 18': ").split(' ')
-
-        created_streams = []
-        for selected_index in selected_streams_indexes:
-            stream_to_create = source_streams[int(selected_index)]
-            result = target_api.post_stream(stream_to_create)
-            created_streams.append(result)
-        click.echo("Streams created in the target: {}".format(created_streams))
-        click.echo("")
-
-        target_roles = target_api.get_roles().get("roles")
-        i = 0
-        for role in target_roles:
-            click.echo("{}: {} ".format(i, role.get("name")))
-            i += 1
-
-        selected_roles_indexes = raw_input("Select a list of roles to access the streams passing IDs splitted by space, like '1 4 7 18': ").split(' ')
-        for selected_index in selected_roles_indexes:
-            role_to_update = target_roles[int(selected_index)]
-            target_api.put_streams_in_role(role_to_update, created_streams)
 
 def get_unique_roles_to_create(source_roles, target_roles):
     for target_role in target_roles:

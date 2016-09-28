@@ -5,21 +5,20 @@ import click
 from glogcli.graylog_api import GraylogAPIFactory
 from glogcli.utils import get_config
 from glogadmincli.graylog_api import GraylogAPI
-from glogadmincli.utils import format_stream_to_create, format_input_to_create
+from glogadmincli.utils import format_stream_to_create, format_input_to_create, format_extractor_to_create
 
 
 @click.command()
-@click.option("-sh", "--source-host", default=None, help="")
-@click.option("-th", "--target-host", default=None,  help="")
-@click.option("-su", "--source-username", default=None,  help="")
-@click.option("-tu", "--target-username", default=None,  help="")
-@click.option("-sp", "--source-password", default=None,  help="")
-@click.option("-tp", "--target-password", default=None,  help="")
-@click.option("--source-port", default=80,  help="")
-@click.option("--target-port", default=80,  help="")
-@click.option("--import-roles", default=False, is_flag=True, help="")
-@click.option("--import-inputs", default=False, is_flag=True, help="")
-@click.option("--import-extractors", default=False, is_flag=True, help="")
+@click.option("-sh", "--source-host", default=None, help="The Graylog node's source host")
+@click.option("-th", "--target-host", default=None,  help="The Graylog node's target host")
+@click.option("-su", "--source-username", default=None,  help="The source Graylog username")
+@click.option("-tu", "--target-username", default=None,  help="The target Graylog username")
+@click.option("-sp", "--source-password", default=None,  help="The source Graylog user password")
+@click.option("-tp", "--target-password", default=None,  help="The target Graylog user password")
+@click.option("--source-port", default=80,  help="The source Graylog port (default: 80)")
+@click.option("--target-port", default=80,  help="The target Graylog port (default: 80)")
+@click.option("--import-roles", default=False, is_flag=True, help="Imports the Roles from the source to the target")
+@click.option("--import-inputs", default=False, is_flag=True, help="Imports the Inputs and its Extractors from the source to the target")
 
 
 def main(source_host,
@@ -31,8 +30,7 @@ def main(source_host,
          source_port,
          target_port,
          import_roles,
-         import_inputs,
-         import_extractors):
+         import_inputs):
 
     cfg = get_config()
 
@@ -62,9 +60,28 @@ def main(source_host,
 
     if import_inputs:
         source_inputs = source_api.get_inputs().get("inputs")
+        target_inputs = target_api.get_inputs().get("inputs")
+
+        inputs_to_create = []
         for source_input in source_inputs:
+            is_source_input_already_in_target = False
+            for target_input in target_inputs:
+                if source_input.get("title") == target_input.get("title"):
+                    is_source_input_already_in_target = True
+            if is_source_input_already_in_target:
+                click.echo("Ignoring input {} from source, it's already created in target.".format(source_input.get("title")))
+            else:
+                inputs_to_create.append(source_input)
+
+
+        for source_input in inputs_to_create:
             source_input_id = source_input.get("id")
             result = target_api.post_input(format_input_to_create(source_input))
+            source_extractors = source_api.get_extractors(source_input_id).get("extractors")
+            for source_extractor in source_extractors:
+                formatted = format_extractor_to_create(source_extractor)
+                target_api.post_extractor(formatted, result.get("id"))
+
 
 def get_unique_roles_to_create(source_roles, target_roles):
     for target_role in target_roles:

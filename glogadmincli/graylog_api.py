@@ -45,6 +45,18 @@ class GraylogAPI(object):
             click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
             return r.json()
 
+    def post_extractor(self, extractor, input_id):
+        params = {}
+        url = "system/inputs/{}/extractors".format(input_id)
+        r = requests.post(self.graylog_api.base_url + url, params=params, headers=POST_DEFAULT_HEADER,
+                          auth=(self.graylog_api.username, self.graylog_api.password),
+                          proxies=self.graylog_api.proxies, data=json.dumps(extractor))
+
+        if r.status_code == requests.codes.created:
+            return r.json()
+        else:
+            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            return r.json()
 
     def post_role(self, role, **kwargs):
         url = "roles"

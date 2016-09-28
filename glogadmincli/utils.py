@@ -21,3 +21,9 @@ def format_streams_to_create(streams):
 def format_input_to_create(input):
     input["configuration"] = input["attributes"]
     return mult_dict_del(input, kwargs=["attributes", "created_at", "creator_user_id", "id", "content_pack", "node", "static_fields", "name"])
+
+def format_extractor_to_create(extractor):
+    extractor["cut_or_copy"] = extractor["cursor_strategy"]
+    extractor["extractor_type"] = extractor["type"]
+    extractor["converters"] = {}
+    return mult_dict_del(extractor, kwargs=["type", "creator_user_id", "id", "metrics", "order", "exceptions", "converter_exceptions", "cursor_strategy"])

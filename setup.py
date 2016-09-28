@@ -11,7 +11,15 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'Click>=6.0',
-    # TODO: put package requirements here
+    'pip==8.1.2',
+    'bumpversion==0.5.3',
+    'wheel==0.29.0',
+    'watchdog==0.8.3',
+    'flake8==2.6.0',
+    'tox==2.3.1',
+    'coverage==4.1',
+    'Sphinx==1.4.4',
+    'glogcli>=0.4.0'
 ]
 
 test_requirements = [
@@ -19,7 +27,7 @@ test_requirements = [
 ]
 
 setup(
-    name='glogadmin-cli',
+    name='glogadmincli',
     version='0.1.0',
     description="Graylog admin command line interface.",
     long_description=readme + '\n\n' + history,
@@ -27,13 +35,13 @@ setup(
     author_email='sinvalneto01@gmail.com',
     url='https://github.com/sinvalmendes/glogadmin-cli',
     packages=[
-        'glogadmin-cli',
+        'glogadmincli',
     ],
-    package_dir={'glogadmin-cli':
+    package_dir={'glogadmincli':
                  'glogadmincli'},
     entry_points={
         'console_scripts': [
-            'glogadmin-cli=glogadmincli.cli:main'
+            'glogadmincli=glogadmincli.cli:main'
         ]
     },
     include_package_data=True,

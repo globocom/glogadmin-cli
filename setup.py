@@ -30,10 +30,10 @@ setup(
         'glogadmin-cli',
     ],
     package_dir={'glogadmin-cli':
-                 'glogadmin-cli'},
+                 'glogadmincli'},
     entry_points={
         'console_scripts': [
-            'glogadmin-cli=glogadmin-cli.cli:main'
+            'glogadmin-cli=glogadmincli.cli:main'
         ]
     },
     include_package_data=True,

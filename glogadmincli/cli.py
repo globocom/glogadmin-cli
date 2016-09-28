@@ -73,7 +73,6 @@ def main(source_host,
             else:
                 inputs_to_create.append(source_input)
 
-
         for source_input in inputs_to_create:
             source_input_id = source_input.get("id")
             result = target_api.post_input(format_input_to_create(source_input))

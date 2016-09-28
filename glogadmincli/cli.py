@@ -17,7 +17,7 @@ from glogadmincli.utils import format_stream_to_create, format_input_to_create, 
 @click.option("-tp", "--target-password", default=None,  help="The target Graylog user password")
 @click.option("--source-port", default=80,  help="The source Graylog port (default: 80)")
 @click.option("--target-port", default=80,  help="The target Graylog port (default: 80)")
-@click.option("--import-roles", default=False, is_flag=True, help="Imports the Roles from the source to the target")
+@click.option("--import-roles", default=False, is_flag=True, help="Imports the Roles and its Streams from the source to the target")
 @click.option("--import-inputs", default=False, is_flag=True, help="Imports the Inputs and its Extractors from the source to the target")
 
 

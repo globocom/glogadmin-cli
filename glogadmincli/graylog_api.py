@@ -11,20 +11,38 @@ class GraylogAPI(object):
     def __init__(self, graylog_api):
         self.graylog_api = graylog_api
 
+    def get(self, url, **kwargs):
+        params = {}
+
+        for label, item in six.iteritems(kwargs):
+            if isinstance(item, list):
+                params[label + "[]"] = item
+            else:
+                params[label] = item
+
+        r = requests.get(self.graylog_api.base_url + url, params=params, headers=self.graylog_api.get_header, auth=(self.graylog_api.username, self.graylog_api.password), proxies=self.graylog_api.proxies)
+        if r.status_code == requests.codes.ok:
+            return r.json()
+        else:
+            click.echo("API error: Status: {} Message: {}".format(r.status_code, r.content))
+
+    def get_host(self):
+        return self.graylog_api.host
+
     def get_extractors(self, input_id):
-        return self.graylog_api.get("system/inputs/{}/extractors".format(input_id))
+        return self.get("system/inputs/{}/extractors".format(input_id))
 
     def get_inputs(self):
-        return self.graylog_api.get("system/inputs")
+        return self.get("system/inputs")
 
     def get_streams(self):
         return self.graylog_api.streams()
 
     def get_roles(self):
-        return self.graylog_api.get("roles")
+        return self.get("roles")
 
     def get_stream(self, id):
-        return self.graylog_api.get("streams/{}".format(id))
+        return self.get("streams/{}".format(id))
 
     def post_input(self, input, **kwargs):
         url = "system/inputs"

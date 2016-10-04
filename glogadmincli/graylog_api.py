@@ -19,8 +19,8 @@ class GraylogAPI(object):
                 params[label + "[]"] = item
             else:
                 params[label] = item
-
         r = requests.get(self.graylog_api.base_url + url, params=params, headers=self.graylog_api.get_header, auth=(self.graylog_api.username, self.graylog_api.password), proxies=self.graylog_api.proxies)
+
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
@@ -36,7 +36,7 @@ class GraylogAPI(object):
         return self.get("system/inputs")
 
     def get_streams(self):
-        return self.graylog_api.streams()
+        return self.get("streams")
 
     def get_roles(self):
         return self.get("roles")
@@ -90,14 +90,9 @@ class GraylogAPI(object):
         r = requests.post(self.graylog_api.base_url + url, params=params, headers=POST_DEFAULT_HEADER,
                           auth=(self.graylog_api.username, self.graylog_api.password),
                           proxies=self.graylog_api.proxies, data=json.dumps(role))
+        return r
 
-        if r.status_code == requests.codes.created:
-            return r.json()
-        else:
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
-            return r.json()
-
-    def put_streams_in_role(self, role, streams, **kwargs):
+    def put_streams_in_role(self, role, streams=[], **kwargs):
         url = "roles/{}".format(role.get("name"))
         params = {}
         for stream in streams:
@@ -118,6 +113,21 @@ class GraylogAPI(object):
             click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
         return r.json()
 
+    def put_stream(self, stream_id, stream):
+        url = "streams/{}".format(stream_id)
+
+        r = requests.put(self.graylog_api.base_url + url, params={}, headers=POST_DEFAULT_HEADER,
+                         auth=(self.graylog_api.username, self.graylog_api.password),
+                         proxies=self.graylog_api.proxies, data=json.dumps(stream))
+
+        if r.status_code != requests.codes.created:
+            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+        return r.json()
+
+    def get_role(self, role):
+        return self.get("roles/{}".format(role.get("name")))
+
+
     def post_stream(self, stream, **kwargs):
         url = "streams"
         params = {}
@@ -134,5 +144,19 @@ class GraylogAPI(object):
 
         if r.status_code != requests.codes.created:
             click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            return None
 
         return r.json()
+
+    def delete_stream(self, stream_id):
+        url = "streams/{}".format(stream_id)
+        params = {}
+
+        r = requests.delete(self.graylog_api.base_url + url, params=params,
+                           auth=(self.graylog_api.username, self.graylog_api.password),
+                           proxies=self.graylog_api.proxies)
+
+        if r.status_code not in (200, 204):
+            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+
+        return r

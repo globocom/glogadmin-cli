@@ -26,4 +26,4 @@ def format_extractor_to_create(extractor):
     extractor["cut_or_copy"] = extractor["cursor_strategy"]
     extractor["extractor_type"] = extractor["type"]
     extractor["converters"] = {}
-    return mult_dict_del(extractor, kwargs=["type", "creator_user_id", "id", "metrics", "order", "exceptions", "converter_exceptions", "cursor_strategy"])
+    return mult_dict_del(extractor, kwargs=["type", "creator_user_id", "id", "metrics", "exceptions", "converter_exceptions", "cursor_strategy"])

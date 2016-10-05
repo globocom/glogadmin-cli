@@ -5,7 +5,7 @@ import click
 from glogcli.graylog_api import GraylogAPIFactory
 from glogcli.utils import get_config
 from glogadmincli.graylog_api import GraylogAPI
-from glogadmincli.utils import format_stream_to_create, format_input_to_create, format_extractor_to_create
+from glogadmincli.utils import format_stream_to_create, format_input_to_create, format_extractor_to_create, format_rule_to_create
 
 
 @click.command()
@@ -44,7 +44,6 @@ def main(source_environment,
                                                    source_port, None, False, source_username, False)
     target_api = GraylogAPIFactory.get_graylog_api(cfg, target_environment, target_host, target_password,
                                                    target_port, None, False, target_username, False)
-
     source_api = GraylogAPI(source_api)
     target_api = GraylogAPI(target_api)
 
@@ -72,8 +71,16 @@ def main(source_environment,
                     source_stream_title = stream.get("title")
                     target_stream_title = target_stream.get("title")
                     if source_stream_title == target_stream_title:
-                        response_put = target_api.put_stream(target_stream.get("id"), format_stream_to_create(stream))
-                        print('***', response_put)
+                        target_api.put_stream(target_stream.get("id"), format_stream_to_create(stream))
+
+                        source_rules = source_api.get_rules(stream_id).get("stream_rules")
+                        target_rules = target_api.get_rules(target_stream.get("id")).get("stream_rules")
+
+                        for target_rule in target_rules:
+                            target_api.delete_rule(target_rule.get("stream_id"), target_rule.get("id"))
+                        for source_rule in source_rules:
+                            formatted_rule = format_rule_to_create(source_rule)
+                            target_api.post_rule(target_stream.get("id"), formatted_rule)
                         stream_was_not_updated = False
 
                 if stream_was_not_updated:
@@ -97,13 +104,11 @@ def main(source_environment,
                     click.echo("Role {} could not be created. Status: {} Message: {}".format(
                         role.get("name"), response.status_code, response.content))
             else:
-                print(target_role)
                 for permission in target_role_permissions:
                     target_role["permissions"].append(permission)
 
                 if target_role.get("read_only") is False:
-                    role_put_response = target_api.put_streams_in_role(target_role)
-                    print(role_put_response)
+                    target_api.put_streams_in_role(target_role)
 
     if import_inputs:
         source_inputs = source_api.get_inputs().get("inputs")
@@ -112,25 +117,45 @@ def main(source_environment,
         inputs_to_create = []
         for source_input in source_inputs:
             is_source_input_already_in_target = False
+            source_input_id = source_input.get("id")
+
             for target_input in target_inputs:
-                if source_input.get("title") == target_input.get("title") :
+                both_inputs_titles_are_equal = source_input.get("title") == target_input.get("title")
+                both_inputs_types_are_equal = source_input.get("type") == target_input.get("type")
+                if both_inputs_titles_are_equal and both_inputs_types_are_equal:
                     is_source_input_already_in_target = True
-            if is_source_input_already_in_target:
-                click.echo("Ignoring Input {} from {}, it's already created in {}.".format(
-                    source_input.get("title"), source_api.get_host(), target_api.get_host()))
-            else:
-                click.echo("Input {} successfully imported from {} to {}.".format(
-                    source_input.get("title"), source_api.get_host(), target_api.get_host()))
+                    if update:
+                        response = target_api.put_input(target_input.get("id"), format_input_to_create(source_input))
+                        #update extractors comparing by title
+                        click.echo("Updating Target Input '{}:{}' in {}, based on Source Input '{}:{}'".format(
+                            target_input.get("title"), response.get("id"), target_api.get_host(),
+                            source_input.get("title"), source_input_id)
+                        )
+                    else:
+                        click.echo("Ignoring Input {}:{} from {}, it's already created in {}".format(
+                            source_input.get("title"), source_input.get("id"), source_api.get_host(),
+                            target_api.get_host())
+                        )
+
+            if not is_source_input_already_in_target:
                 inputs_to_create.append(source_input)
 
         for source_input in inputs_to_create:
             source_input_id = source_input.get("id")
-            result = target_api.post_input(format_input_to_create(source_input))
-            source_extractors = source_api.get_extractors(source_input_id).get("extractors")
-            for source_extractor in source_extractors:
-                formatted = format_extractor_to_create(source_extractor)
-                target_api.post_extractor(formatted, result.get("id"))
+            source_input_title = source_input.get("title")
+            if source_input_title == "input-sinval-do-not-touch-it":
+                result = target_api.post_input(format_input_to_create(source_input))
+                click.echo("Input {} successfully imported from {} to {}.".format(
+                    source_input.get("title"), source_api.get_host(), target_api.get_host()))
 
+                source_extractors = source_api.get_extractors(source_input_id).get("extractors")
+                for source_extractor in source_extractors:
+                    formatted = format_extractor_to_create(source_extractor)
+                    target_api.post_extractor(formatted, result.get("id"))
+
+
+def compare_extractors(first_extractor, second_extractor):
+    return first_extractor.get("title").lower() == second_extractor.get("title").lower()
 
 def get_permission_map_by_stream_id(role_permissions):
     stream_by_permission_map = {}

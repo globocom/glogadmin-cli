@@ -150,6 +150,18 @@ class GraylogAPI(object):
             click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
         return r.json()
 
+    def put_extractor(self, input_id, extractor_id, extractor):
+        url = "system/inputs/{}/extractors/{}".format(input_id, extractor_id)
+
+        r = requests.put(self.graylog_api.base_url + url, params={}, headers=POST_DEFAULT_HEADER,
+                         auth=(self.graylog_api.username, self.graylog_api.password),
+                         proxies=self.graylog_api.proxies, data=json.dumps(extractor))
+
+        if r.status_code != requests.codes.ok:
+            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+        return r.json()
+
+
     def get_role(self, role):
         return self.get("roles/{}".format(role.get("name")))
 

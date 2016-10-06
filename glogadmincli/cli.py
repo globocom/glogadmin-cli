@@ -71,7 +71,7 @@ def main(source_environment,
                     source_stream_title = stream.get("title")
                     target_stream_title = target_stream.get("title")
                     if source_stream_title == target_stream_title:
-                        target_api.put_stream(target_stream.get("id"), format_stream_to_create(stream))
+                        target_api.put_stream(target_stream.get("id"), format_stream_to_create(stream.copy()))
 
                         source_rules = source_api.get_rules(stream_id).get("stream_rules")
                         target_rules = target_api.get_rules(target_stream.get("id")).get("stream_rules")
@@ -114,6 +114,7 @@ def main(source_environment,
         source_inputs = source_api.get_inputs().get("inputs")
         target_inputs = target_api.get_inputs().get("inputs")
 
+        #### handle_input_update
         inputs_to_create = []
         for source_input in source_inputs:
             is_source_input_already_in_target = False
@@ -122,15 +123,53 @@ def main(source_environment,
             for target_input in target_inputs:
                 both_inputs_titles_are_equal = source_input.get("title") == target_input.get("title")
                 both_inputs_types_are_equal = source_input.get("type") == target_input.get("type")
-                if both_inputs_titles_are_equal and both_inputs_types_are_equal:
+                both_inputs_ports_are_equal = source_input.get("port") == target_input.get("port")
+                if both_inputs_titles_are_equal and both_inputs_types_are_equal and both_inputs_ports_are_equal:
                     is_source_input_already_in_target = True
                     if update:
-                        response = target_api.put_input(target_input.get("id"), format_input_to_create(source_input))
-                        #update extractors comparing by title
+                        response_input_put = target_api.put_input(target_input.get("id"), format_input_to_create(source_input.copy()))
+
+                        ##### handle_extractors_update
+                        target_input_id = target_input.get("id")
+                        target_extractors = target_api.get_extractors(target_input_id).get("extractors")
+                        source_extractors = source_api.get_extractors(source_input_id).get("extractors")
+                        extractors_to_create = []
+                        for source_extractor in source_extractors:
+                            is_source_extractor_already_in_target = False
+
+                            for target_extractor in target_extractors:
+                                are_equal_extractors = compare_extractors(source_extractor, target_extractor)
+                                if are_equal_extractors and update:
+                                    is_source_extractor_already_in_target = True
+                                    #response_extractor_put = target_api.put_extractor(
+                                    #    target_input_id, target_extractor.get("id"),
+                                    #    format_extractor_to_create(source_extractor.copy())
+                                    #)
+                                    #click.echo(
+                                    #    "Updating Target Extractor '{}:{}' in {}, based on Source Extractor '{}:{}'".format(
+                                    #        response_extractor_put.get("title"), response_extractor_put.get("id"),
+                                    #        target_api.get_host(),
+                                    #        source_extractor.get("title"), source_extractor.get("id"))
+                                    #)
+
+                            if not is_source_extractor_already_in_target:
+                                extractors_to_create.append(source_extractor)
+
+                        ##### handle_extractors_creation
+                        for extractor_to_create in extractors_to_create:
+                            response_extractor_post = target_api.post_extractor(
+                                format_extractor_to_create(extractor_to_create.copy()), target_input_id
+                            )
+                            click.echo("Creating Target Extractor '{}:{}' in {}, based on Source Extractor '{}:{}'".format(
+                                extractor_to_create.get("title"), response_extractor_post.get("extractor_id"), target_api.get_host(),
+                                extractor_to_create.get("title"), extractor_to_create.get("id"))
+                            )
+
                         click.echo("Updating Target Input '{}:{}' in {}, based on Source Input '{}:{}'".format(
-                            target_input.get("title"), response.get("id"), target_api.get_host(),
+                            target_input.get("title"), response_input_put.get("id"), target_api.get_host(),
                             source_input.get("title"), source_input_id)
                         )
+
                     else:
                         click.echo("Ignoring Input {}:{} from {}, it's already created in {}".format(
                             source_input.get("title"), source_input.get("id"), source_api.get_host(),
@@ -140,10 +179,13 @@ def main(source_environment,
             if not is_source_input_already_in_target:
                 inputs_to_create.append(source_input)
 
+
+        #### handle_inputs_creation
         for source_input in inputs_to_create:
+            print(source_input.get("title"))
             source_input_id = source_input.get("id")
             source_input_title = source_input.get("title")
-            if source_input_title == "input-sinval-do-not-touch-it":
+            if source_input_title == "no-way":
                 result = target_api.post_input(format_input_to_create(source_input))
                 click.echo("Input {} successfully imported from {} to {}.".format(
                     source_input.get("title"), source_api.get_host(), target_api.get_host()))
@@ -156,6 +198,7 @@ def main(source_environment,
 
 def compare_extractors(first_extractor, second_extractor):
     return first_extractor.get("title").lower() == second_extractor.get("title").lower()
+
 
 def get_permission_map_by_stream_id(role_permissions):
     stream_by_permission_map = {}
@@ -181,6 +224,7 @@ def get_unique_roles_to_create(source_roles, target_roles, update=False):
             if source_role.get("name").lower() in ('admin','reader'):
                 source_roles.remove(source_role)
     return source_roles
+
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,4 @@
+import json
 
 def mult_dict_del(dict, kwargs):
     for key in kwargs:
@@ -26,7 +27,11 @@ def format_input_to_create(input):
 def format_extractor_to_create(extractor):
     extractor["cut_or_copy"] = extractor["cursor_strategy"]
     extractor["extractor_type"] = extractor["type"]
-    extractor["converters"] = {}
+    converters = extractor.get("converters")
+    if converters is None or len(converters) == 0:
+        extractor["converters"] = {}
+    else:
+        extractor["converters"] = {} #json.dumps(converters)
     return mult_dict_del(extractor, kwargs=["type", "creator_user_id", "id", "metrics", "exceptions",
                                             "converter_exceptions", "cursor_strategy"])
 

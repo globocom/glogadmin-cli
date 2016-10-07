@@ -21,7 +21,7 @@ from glogadmincli.utils import format_stream_to_create, format_input_to_create, 
 @click.option("--target-port", default=80,  help="The target Graylog port (default: 80)")
 @click.option("--import-roles", default=False, is_flag=True, help="Imports the Roles and its Streams from the source to the target")
 @click.option("--import-inputs", default=False, is_flag=True, help="Imports the Inputs and its Extractors from the source to the target")
-@click.option("--update", default=False, is_flag=True, help="Force update of resources like Streams and Extractors")
+@click.option("--update", default=False, is_flag=True, help="Force update of resources like Roles, Streams, Inputs and Extractors")
 
 
 def main(source_environment,
@@ -41,9 +41,9 @@ def main(source_environment,
     cfg = get_config()
 
     source_api = GraylogAPIFactory.get_graylog_api(cfg, source_environment, source_host, source_password,
-                                                   source_port, None, False, source_username, False)
+                                                   source_port, None, False, source_username)
     target_api = GraylogAPIFactory.get_graylog_api(cfg, target_environment, target_host, target_password,
-                                                   target_port, None, False, target_username, False)
+                                                   target_port, None, False, target_username)
     source_api = GraylogAPI(source_api)
     target_api = GraylogAPI(target_api)
 
@@ -98,10 +98,10 @@ def main(source_environment,
             if target_role is None:
                 response = target_api.post_role(role)
                 if response.status_code in [200, 201]:
-                    click.echo("Role {} successfully imported from {} to {}.".format(
+                    click.echo("Role '{}' successfully imported from {} to {}.".format(
                         role.get("name"), source_api.get_host(), target_api.get_host()))
                 else:
-                    click.echo("Role {} could not be created. Status: {} Message: {}".format(
+                    click.echo("Role '{}' could not be created. Status: {} Message: {}".format(
                         role.get("name"), response.status_code, response.content))
             else:
                 for permission in target_role_permissions:
@@ -121,18 +121,18 @@ def main(source_environment,
             source_input_id = source_input.get("id")
 
             for target_input in target_inputs:
-                both_inputs_titles_are_equal = source_input.get("title") == target_input.get("title")
-                both_inputs_types_are_equal = source_input.get("type") == target_input.get("type")
-                both_inputs_ports_are_equal = source_input.get("port") == target_input.get("port")
-                if both_inputs_titles_are_equal and both_inputs_types_are_equal and both_inputs_ports_are_equal:
+                are_equal_inputs = compare_inputs(source_input, target_input)
+                if are_equal_inputs:
                     is_source_input_already_in_target = True
                     if update:
-                        response_input_put = target_api.put_input(target_input.get("id"), format_input_to_create(source_input.copy()))
+                        response_input_put = target_api.put_input(
+                            target_input.get("id"), format_input_to_create(source_input.copy())
+                        )
 
                         ##### handle_extractors_update
                         target_input_id = target_input.get("id")
-                        target_extractors = target_api.get_extractors(target_input_id).get("extractors")
                         source_extractors = source_api.get_extractors(source_input_id).get("extractors")
+                        target_extractors = target_api.get_extractors(target_input_id).get("extractors")
                         extractors_to_create = []
                         for source_extractor in source_extractors:
                             is_source_extractor_already_in_target = False
@@ -141,16 +141,16 @@ def main(source_environment,
                                 are_equal_extractors = compare_extractors(source_extractor, target_extractor)
                                 if are_equal_extractors and update:
                                     is_source_extractor_already_in_target = True
-                                    #response_extractor_put = target_api.put_extractor(
-                                    #    target_input_id, target_extractor.get("id"),
-                                    #    format_extractor_to_create(source_extractor.copy())
-                                    #)
-                                    #click.echo(
-                                    #    "Updating Target Extractor '{}:{}' in {}, based on Source Extractor '{}:{}'".format(
-                                    #        response_extractor_put.get("title"), response_extractor_put.get("id"),
-                                    #        target_api.get_host(),
-                                    #        source_extractor.get("title"), source_extractor.get("id"))
-                                    #)
+                                    response_extractor_put = target_api.put_extractor(
+                                        target_input_id, target_extractor.get("id"),
+                                        format_extractor_to_create(source_extractor.copy())
+                                    )
+                                    click.echo(
+                                        "Updating Target Extractor '{}:{}' in {}, based on Source Extractor '{}:{}'".format(
+                                            response_extractor_put.get("title"), response_extractor_put.get("id"),
+                                            target_api.get_host(),
+                                            source_extractor.get("title"), source_extractor.get("id"))
+                                    )
 
                             if not is_source_extractor_already_in_target:
                                 extractors_to_create.append(source_extractor)
@@ -185,15 +185,21 @@ def main(source_environment,
             print(source_input.get("title"))
             source_input_id = source_input.get("id")
             source_input_title = source_input.get("title")
-            if source_input_title == "no-way":
-                result = target_api.post_input(format_input_to_create(source_input))
-                click.echo("Input {} successfully imported from {} to {}.".format(
-                    source_input.get("title"), source_api.get_host(), target_api.get_host()))
+            result = target_api.post_input(format_input_to_create(source_input))
+            click.echo("Input '{}' successfully imported from {} to {}.".format(
+                source_input.get("title"), source_api.get_host(), target_api.get_host()))
 
-                source_extractors = source_api.get_extractors(source_input_id).get("extractors")
-                for source_extractor in source_extractors:
-                    formatted = format_extractor_to_create(source_extractor)
-                    target_api.post_extractor(formatted, result.get("id"))
+            source_extractors = source_api.get_extractors(source_input_id).get("extractors")
+            for source_extractor in source_extractors:
+                formatted = format_extractor_to_create(source_extractor)
+                target_api.post_extractor(formatted, result.get("id"))
+
+
+def compare_inputs(source_input, target_input):
+    both_titles_are_equal = source_input.get("title") == target_input.get("title")
+    both_types_are_equal = source_input.get("type") == target_input.get("type")
+    both_ports_are_equal = source_input.get("port") == target_input.get("port")
+    return both_titles_are_equal and both_types_are_equal and both_ports_are_equal
 
 
 def compare_extractors(first_extractor, second_extractor):

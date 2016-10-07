@@ -13,32 +13,6 @@ Instalation
 	cd glogadmin-cli/
 	pip install .
 
-Usage
---------
-Glogadmin-CLI is a command line interface tool to import resources like such as Roles, Streams, Inputs and Extractors,
-from one Graylog server to another Graylog server.
-
-This command will import all the Roles and Streams from the QA environment that are not created in the DEV environment.
-> glogadmincli -se qa -te dev --import-roles
-
--
-This command will import all the Roles and Streams from the QA environment that are not created in the DEV environment,
-and, due to the '--update' flag the Roles and Streams already created in DEV environment will be updated and will be
-exactly like the ones in QA.
-> glogadmincli -se qa -te dev --import-roles --update
-
--
-This command will import all the Inputs and Extractors from the QA environment that are not created in the DEV environment.
-> glogadmincli -se qa -te dev --import-inputs
-
--
-This command will import all the Inputs and Extractors from the QA environment that are not created in the DEV environment,
-and, due to the '--update' flag the Inputs and Extractors already created in DEV environment will be updated and will be
-exactly like the ones in QA.
-> glogadmincli -se qa -te dev --import-inputs --update
-
--
-
 
 Configuration
 --------
@@ -66,6 +40,33 @@ Here is a template for your glogcli.cfg file:
     port=80
     tls=true
     username=john.doe
+
+
+Usage
+--------
+Glogadmin-CLI is a command line interface tool to import resources like such as Roles, Streams, Inputs and Extractors,
+from one Graylog server to another Graylog server.
+
+This command will import all the Roles and Streams from the QA environment that are not created in the DEV environment.
+> glogadmincli -se qa -te dev --import-roles
+
+-
+This command will import all the Roles and Streams from the QA environment that are not created in the DEV environment,
+and, due to the '--update' flag the Roles and Streams already created in DEV environment will be updated and will be
+exactly like the ones in QA.
+> glogadmincli -se qa -te dev --import-roles --update
+
+-
+This command will import all the Inputs and Extractors from the QA environment that are not created in the DEV environment.
+> glogadmincli -se qa -te dev --import-inputs
+
+-
+This command will import all the Inputs and Extractors from the QA environment that are not created in the DEV environment,
+and, due to the '--update' flag the Inputs and Extractors already created in DEV environment will be updated and will be
+exactly like the ones in QA.
+> glogadmincli -se qa -te dev --import-inputs --update
+
+-
 
 Please run the *help* command for more detailed information about all the client features.
 

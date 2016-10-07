@@ -182,9 +182,7 @@ def main(source_environment,
 
         #### handle_inputs_creation
         for source_input in inputs_to_create:
-            print(source_input.get("title"))
             source_input_id = source_input.get("id")
-            source_input_title = source_input.get("title")
             result = target_api.post_input(format_input_to_create(source_input))
             click.echo("Input '{}' successfully imported from {} to {}.".format(
                 source_input.get("title"), source_api.get_host(), target_api.get_host()))

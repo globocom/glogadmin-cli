@@ -47,24 +47,23 @@ Here is a template for your glogcli.cfg file:
 
 Please run the *help* command for more detailed information about all the client features.
 
-Options:
-  -se, --source-environment TEXT  The Graylog source environment
-  -te, --target-environment TEXT  The Graylog target environment
-  -sh, --source-host TEXT         The Graylog node's source host
-  -th, --target-host TEXT         The Graylog node's target host
-  -su, --source-username TEXT     The source Graylog username
-  -tu, --target-username TEXT     The target Graylog username
-  -sp, --source-password TEXT     The source Graylog user password
-  -tp, --target-password TEXT     The target Graylog user password
-  --source-port INTEGER           The source Graylog port (default: 80)
-  --target-port INTEGER           The target Graylog port (default: 80)
-  --import-roles                  Imports the Roles and its Streams from the
-                                  source to the target
-  --import-inputs                 Imports the Inputs and its Extractors from
-                                  the source to the target
-  --update                        Force update of resources like Roles,
-                                  Streams, Inputs and Extractors
-  --help                          Show this message and exit.
+    glogcli --help
 
-
-
+    Options:
+      -se, --source-environment TEXT  The Graylog source environment
+      -te, --target-environment TEXT  The Graylog target environment
+      -sh, --source-host TEXT         The Graylog node's source host
+      -th, --target-host TEXT         The Graylog node's target host
+      -su, --source-username TEXT     The source Graylog username
+      -tu, --target-username TEXT     The target Graylog username
+      -sp, --source-password TEXT     The source Graylog user password
+      -tp, --target-password TEXT     The target Graylog user password
+      --source-port INTEGER           The source Graylog port (default: 80)
+      --target-port INTEGER           The target Graylog port (default: 80)
+      --import-roles                  Imports the Roles and its Streams from the
+                                      source to the target
+      --import-inputs                 Imports the Inputs and its Extractors from
+                                      the source to the target
+      --update                        Force update of resources like Roles,
+                                      Streams, Inputs and Extractors
+      --help                          Show this message and exit

@@ -4,7 +4,7 @@ Glogadmin-CLI
 
 * Free software: Apache Software License 2.0
 
-Glogadmin-CLI is an opensource command line interface for Graylog2.
+Glogadmin-CLI is an open source command line interface for Graylog2.
 
 Instalation
 --------
@@ -18,8 +18,7 @@ Configuration
 --------
 
 Glogadmin-CLI can reuse some common configurations like address of your Graylog server and your credentials, it will look for a
-*~/.glogcli.cfg* or a *glogcli.cfg* (in your current directory). Glogadmin-CLI will use default environment and format
-whenever an environment or format is omitted.
+*~/.glogcli.cfg* . Glogadmin-CLI will use default environment and format whenever an environment or format is omitted.
 
 Here is a template for your glogcli.cfg file:
 

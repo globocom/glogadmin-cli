@@ -118,7 +118,6 @@ def main(source_environment,
         inputs_to_create = []
         for source_input in source_inputs:
             is_source_input_already_in_target = False
-            source_input_id = source_input.get("id")
 
             for target_input in target_inputs:
                 are_equal_inputs = compare_inputs(source_input, target_input)
@@ -128,69 +127,85 @@ def main(source_environment,
                         response_input_put = target_api.put_input(
                             target_input.get("id"), format_input_to_create(source_input.copy())
                         )
+                        show_input_update_message(source_input, target_input, target_api)
 
                         ##### handle_extractors_update
-                        target_input_id = target_input.get("id")
-                        source_extractors = source_api.get_extractors(source_input_id).get("extractors")
-                        target_extractors = target_api.get_extractors(target_input_id).get("extractors")
+                        source_extractors = source_api.get_extractors(source_input.get("id")).get("extractors")
+                        target_extractors = target_api.get_extractors(target_input.get("id")).get("extractors")
+
                         extractors_to_create = []
                         for source_extractor in source_extractors:
                             is_source_extractor_already_in_target = False
 
                             for target_extractor in target_extractors:
                                 are_equal_extractors = compare_extractors(source_extractor, target_extractor)
-                                if are_equal_extractors and update:
+                                if are_equal_extractors:
                                     is_source_extractor_already_in_target = True
-                                    response_extractor_put = target_api.put_extractor(
-                                        target_input_id, target_extractor.get("id"),
-                                        format_extractor_to_create(source_extractor.copy())
-                                    )
-                                    click.echo(
-                                        "Updating Target Extractor '{}:{}' in {}, based on Source Extractor '{}:{}'".format(
-                                            response_extractor_put.get("title"), response_extractor_put.get("id"),
-                                            target_api.get_host(),
-                                            source_extractor.get("title"), source_extractor.get("id"))
-                                    )
+                                    update_extractor(target_input.get("id"), target_extractor.get("id"),
+                                                     source_extractor, target_api)
 
                             if not is_source_extractor_already_in_target:
                                 extractors_to_create.append(source_extractor)
 
                         ##### handle_extractors_creation
-                        for extractor_to_create in extractors_to_create:
-                            response_extractor_post = target_api.post_extractor(
-                                format_extractor_to_create(extractor_to_create.copy()), target_input_id
-                            )
-                            click.echo("Creating Target Extractor '{}:{}' in {}, based on Source Extractor '{}:{}'".format(
-                                extractor_to_create.get("title"), response_extractor_post.get("extractor_id"), target_api.get_host(),
-                                extractor_to_create.get("title"), extractor_to_create.get("id"))
-                            )
-
-                        click.echo("Updating Target Input '{}:{}' in {}, based on Source Input '{}:{}'".format(
-                            target_input.get("title"), response_input_put.get("id"), target_api.get_host(),
-                            source_input.get("title"), source_input_id)
-                        )
+                        create_extractors(target_input.get("id"), target_api, extractors_to_create)
 
                     else:
-                        click.echo("Ignoring Input {}:{} from {}, it's already created in {}".format(
-                            source_input.get("title"), source_input.get("id"), source_api.get_host(),
-                            target_api.get_host())
-                        )
+                        show_ignoring_input_update_message(source_input, source_api, target_api)
 
             if not is_source_input_already_in_target:
                 inputs_to_create.append(source_input)
 
-
         #### handle_inputs_creation
-        for source_input in inputs_to_create:
-            source_input_id = source_input.get("id")
-            result = target_api.post_input(format_input_to_create(source_input))
-            click.echo("Input '{}' successfully imported from {} to {}.".format(
-                source_input.get("title"), source_api.get_host(), target_api.get_host()))
+        create_inputs(source_api, target_api, inputs_to_create)
 
-            source_extractors = source_api.get_extractors(source_input_id).get("extractors")
-            for source_extractor in source_extractors:
-                formatted = format_extractor_to_create(source_extractor)
-                target_api.post_extractor(formatted, result.get("id"))
+
+def show_ignoring_input_update_message(source_input, source_api, target_api):
+    click.echo("Ignoring Input {}:{} from {}, it's already created in {}".format(
+        source_input.get("title"), source_input.get("id"), source_api.get_host(),
+        target_api.get_host())
+    )
+
+def show_input_update_message(source_input, target_input, target_api):
+    click.echo("Updating Target Input '{}:{}' in {}, based on Input '{}:{}'".format(
+        target_input.get("title"), target_input.get("id"), target_api.get_host(),
+        source_input.get("title"), source_input.get("id"))
+    )
+
+def update_extractor(input_id, extractor_id, base_extractor, target_api):
+    response_extractor_put = target_api.put_extractor(
+        input_id, extractor_id,
+        format_extractor_to_create(base_extractor.copy())
+    )
+    click.echo(
+        "Updating Target Extractor '{}:{}' in {}, based on Extractor '{}:{}'".format(
+            response_extractor_put.get("title"), response_extractor_put.get("id"),
+            target_api.get_host(),
+            base_extractor.get("title"), base_extractor.get("id"))
+    )
+
+def create_extractors(target_input_id, target_api, extractors_to_create):
+    for extractor_to_create in extractors_to_create:
+        response_extractor_post = target_api.post_extractor(
+            format_extractor_to_create(extractor_to_create.copy()), target_input_id
+        )
+        click.echo("Creating Target Extractor '{}:{}' in {}, based on Source Extractor '{}:{}'".format(
+            extractor_to_create.get("title"), response_extractor_post.get("extractor_id"), target_api.get_host(),
+            extractor_to_create.get("title"), extractor_to_create.get("id"))
+        )
+
+
+def create_inputs(source_api, target_api, inputs_to_create):
+    for source_input in inputs_to_create:
+        source_input_id = source_input.get("id")
+        result = target_api.post_input(format_input_to_create(source_input))
+        click.echo("Input '{}' successfully imported from {} to {}.".format(
+            source_input.get("title"), source_api.get_host(), target_api.get_host()))
+
+        source_extractors = source_api.get_extractors(source_input_id).get("extractors")
+        for source_extractor in source_extractors:
+            formatted = format_extractor_to_create(source_extractor)
+            target_api.post_extractor(formatted, result.get("id"))
 
 
 def compare_inputs(source_input, target_input):

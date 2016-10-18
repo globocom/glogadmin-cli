@@ -114,7 +114,6 @@ def main(source_environment,
         source_inputs = source_api.get_inputs().get("inputs")
         target_inputs = target_api.get_inputs().get("inputs")
 
-        #### handle_input_update
         inputs_to_create = []
         for source_input in source_inputs:
             is_source_input_already_in_target = False
@@ -129,7 +128,6 @@ def main(source_environment,
                         )
                         show_input_update_message(source_input, target_input, target_api)
 
-                        ##### handle_extractors_update
                         source_extractors = source_api.get_extractors(source_input.get("id")).get("extractors")
                         target_extractors = target_api.get_extractors(target_input.get("id")).get("extractors")
 
@@ -147,7 +145,6 @@ def main(source_environment,
                             if not is_source_extractor_already_in_target:
                                 extractors_to_create.append(source_extractor)
 
-                        ##### handle_extractors_creation
                         create_extractors(target_input.get("id"), target_api, extractors_to_create)
 
                     else:
@@ -156,7 +153,6 @@ def main(source_environment,
             if not is_source_input_already_in_target:
                 inputs_to_create.append(source_input)
 
-        #### handle_inputs_creation
         create_inputs(source_api, target_api, inputs_to_create)
 
 

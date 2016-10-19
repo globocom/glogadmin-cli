@@ -19,12 +19,14 @@ class GraylogAPI(object):
                 params[label + "[]"] = item
             else:
                 params[label] = item
-        r = requests.get(self.graylog_api.base_url + url, params=params, headers=self.graylog_api.get_header, auth=(self.graylog_api.username, self.graylog_api.password), proxies=self.graylog_api.proxies)
+        r = requests.get(self.graylog_api.base_url + url, params=params, headers=self.graylog_api.get_header,
+                         auth=(self.graylog_api.username, self.graylog_api.password),
+                         proxies=self.graylog_api.proxies)
 
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            click.echo("API error: Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
 
     def get_host(self):
         return self.graylog_api.host
@@ -73,7 +75,7 @@ class GraylogAPI(object):
         if r.status_code == requests.codes.created:
             return r.json()
         else:
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
             return r.json()
 
     def post_role(self, role, **kwargs):
@@ -125,7 +127,7 @@ class GraylogAPI(object):
                          proxies=self.graylog_api.proxies, data=json.dumps(role))
 
         if r.status_code != requests.codes.created:
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
         return r.json()
 
     def put_stream(self, stream_id, stream):
@@ -136,7 +138,7 @@ class GraylogAPI(object):
                          proxies=self.graylog_api.proxies, data=json.dumps(stream))
 
         if r.status_code != requests.codes.created:
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
         return r.json()
 
     def put_input(self, input_id, input):
@@ -147,7 +149,7 @@ class GraylogAPI(object):
                          proxies=self.graylog_api.proxies, data=json.dumps(input))
 
         if r.status_code != requests.codes.created:
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
         return r.json()
 
     def put_extractor(self, input_id, extractor_id, extractor):
@@ -183,7 +185,7 @@ class GraylogAPI(object):
                           proxies=self.graylog_api.proxies, data=json.dumps(stream))
 
         if r.status_code != requests.codes.created:
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
             return None
 
         return r.json()
@@ -197,7 +199,7 @@ class GraylogAPI(object):
                            proxies=self.graylog_api.proxies)
 
         if r.status_code not in (200, 204):
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
 
         return r
 
@@ -210,6 +212,6 @@ class GraylogAPI(object):
                             proxies=self.graylog_api.proxies)
 
         if r.status_code not in (200, 204):
-            click.echo("API - Status: {} Message: {}".format(r.status_code, r.content))
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
 
         return r

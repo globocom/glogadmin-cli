@@ -46,6 +46,17 @@ class GraylogAPI(object):
     def get_stream(self, id):
         return self.get("streams/{}".format(id))
 
+    def graylog_api_post(self, uri, data, params={}):
+        r = requests.post(self.graylog_api.base_url + uri, params=params, headers=POST_DEFAULT_HEADER,
+                          auth=(self.graylog_api.username, self.graylog_api.password),
+                          proxies=self.graylog_api.proxies, data=json.dumps(data))
+
+        if r.status_code == requests.codes.created:
+            return r.json()
+        else:
+            click.echo("Status: {} Message: {}".format(r.status_code, r.content))
+            return r.json()
+
     def post_input(self, input, **kwargs):
         url = "system/inputs"
         params = {}

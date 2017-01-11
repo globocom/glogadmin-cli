@@ -18,7 +18,7 @@ requirements = [
     'flake8==2.6.0',
     'tox==2.3.1',
     'coverage==4.1',
-    'glogcli==0.4.0'
+    'glogcli==0.8.2'
 ]
 
 test_requirements = [

@@ -41,9 +41,10 @@ def main(source_environment,
     cfg = get_config()
 
     source_api = GraylogAPIFactory.get_graylog_api(cfg, source_environment, source_host, source_password,
-                                                   source_port, None, False, source_username)
+                                                   source_port, None, False, source_username, False)
+
     target_api = GraylogAPIFactory.get_graylog_api(cfg, target_environment, target_host, target_password,
-                                                   target_port, None, False, target_username)
+                                                   target_port, None, False, target_username, False)
     source_api = GraylogAPI(source_api)
     target_api = GraylogAPI(target_api)
 
@@ -55,6 +56,10 @@ def main(source_environment,
         target_streams = target_api.get_streams()
 
         for role in roles_to_create:
+            should_import_role = raw_input("Do you want to import role: %s ?[S/N]" % str(role.get('name')))
+            print(should_import_role)
+            if should_import_role != "s":
+                continue
             target_role_permissions = []
 
             stream_by_permission_map_source = get_permission_map_by_stream_id(role.get("permissions"))
@@ -71,6 +76,7 @@ def main(source_environment,
                     source_stream_title = stream.get("title")
                     target_stream_title = target_stream.get("title")
                     if source_stream_title == target_stream_title:
+                        #input
                         target_api.put_stream(target_stream.get("id"), format_stream_to_create(stream.copy()))
 
                         source_rules = source_api.get_rules(stream_id).get("stream_rules")
@@ -237,7 +243,10 @@ def get_unique_roles_to_create(source_roles, target_roles, update=False):
             if source_role_is_equals_to_target_role and not (update):
                 source_roles.remove(source_role)
             if source_role.get("name").lower() in ('admin','reader'):
-                source_roles.remove(source_role)
+                try:
+                    source_roles.remove(source_role)
+                except ValueError as ve:
+                    pass
     return source_roles
 
 
